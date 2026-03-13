@@ -33,7 +33,7 @@
 
 ## 6. 开发者备注
 - 核心逻辑：Python 3.x
-- 依赖：pandas, mysql-connector-python, python-dotenv
+- 依赖：pandas, mysql-connector-python, python-dotenv, oss2
 
 ## 7. 示例
 - 示例：帮我导出黄浦区25年3月1日到25年3月31日的电梯清单
