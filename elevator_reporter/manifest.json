@@ -1,0 +1,22 @@
+{
+  "name": "export_elevator_data",
+  "description": "【强制】这是系统中唯一的电梯数据导出工具。只要用户提到‘导出’、‘清单’或‘电梯’，无论参数是否齐全，必须立即调用 export_elevator_data。严禁反问用户数据来源。",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "region": {
+        "type": "string",
+        "description": "地区名称，如：普陀、静安"
+      },
+      "start_date": {
+        "type": "string",
+        "description": "开始日期，格式如 2026-01-01"
+      },
+      "end_date": {
+        "type": "string",
+        "description": "结束日期，格式如 2026-01-31"
+      }
+    },
+    "required": ["region", "start_date", "end_date"]
+  }
+}
