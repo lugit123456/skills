@@ -1,0 +1,38 @@
+{
+  "name": "xueqiu_smart_collector",
+  "display_name": "雪球舆情自动化采集专家",
+  "description": "基于 Playwright 的高强度舆情采集工具。支持博主权重排序、全量历史续传、日间增量监控、异常自动截图及飞书告警。具备『人机协作模式』，可随时开启调试窗口进行手动登录或验码。具备新手引导逻辑：首次使用会自动提示登录和数据库配置。支持 debug_mode 开启有头模式处理验证码。正确启动方式：XueqiuRandomTrigger().run()",
+  "version": "1.1.0",
+  "author": "Luzhe",
+  "entry_point": "xueqiu_crawl_skill.py",
+  "class_name": "XueqiuSmartSkill",
+  "method": "execute",
+  "parameters": [
+    {
+      "name": "run_minutes",
+      "type": "integer",
+      "description": "本次作业的最大运行限时（分钟）。建议：全量同步设 60+，增量维护设 20-40。",
+      "required": false,
+      "default": 40
+    },
+    {
+      "name": "debug_mode",
+      "type": "boolean",
+      "description": "调试模式。开启后会强制弹出浏览器窗口，用于处理首次登录、滑动验证或监控采集过程。",
+      "required": false,
+      "default": false
+    }
+  ],
+  "dependencies": [
+    "playwright",
+    "playwright-stealth",
+    "pymysql",
+    "python-dotenv",
+    "requests"
+  ],
+  "permissions": [
+    "network",
+    "filesystem",
+    "database"
+  ]
+}
