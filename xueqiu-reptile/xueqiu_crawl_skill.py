@@ -177,7 +177,7 @@ class XueqiuSmartSkill:
                 for s in statuses:
                     sql = """INSERT IGNORE INTO blogger_posts (id, user_id, screen_name, content, stock_codes, stock_names, comment_time) 
                              VALUES (%s, %s, %s, %s, %s, %s, %s)"""
-                    clean_content = re.sub(r'<[^>]+>', '', s.get('description', '')).strip()
+                    clean_content = re.sub(r'<[^>]+>', '', s.get('text', '')).strip()
                     codes = ",".join(s.get('stockCorrelation', []))
                     names = ",".join(re.findall(r'\$([^$()]+)\((?:SH|SZ|HK)?\d{5,6}\)\$', s.get('text', '')))
                     cur.execute(sql, (s['id'], s['user']['id'], s['user']['screen_name'], clean_content, codes, names,
