@@ -1,0 +1,15 @@
+{
+  "name": "WeChat_Spider_Skill",
+  "version": "1.1.0",
+  "description": "支持并发抓取的微信爬虫系统。列表同步与详情下载采用独立任务锁，支持 AI 同时调度以提高效率。",
+  "functions": [
+    {
+      "name": "sync_article_list",
+      "description": "【高优先级】启动列表同步进程。由于使用了独立锁 `is_running`，该工具可以与详情抓取工具同时运行。"
+    },
+    {
+      "name": "crawl_article_details",
+      "description": "【持续运行】启动详情转换进程。它会处理数据库中现有的待抓取任务，支持与列表同步工具并行执行。"
+    }
+  ]
+}
