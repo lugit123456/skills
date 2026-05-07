@@ -100,4 +100,15 @@ python disclosure_sync_manager.py
 - **数据一致性**：使用 `INSERT IGNORE` 配合 `fingerprint` 唯一索引。
 - **SSL 绕过**：通过自定义 `TlsAdapter` 实现。
 
+🚨 部署重要提醒：防止被系统强杀
+如果脚本在 OpenClaw 中运行报 SIGTERM 错误，说明 OpenClaw 的强制超时时间短于脚本的运行寿命。
+请按以下步骤处理：
+
+调低脚本寿命：修改 .env 中的 SESSION_LIFESPAN_MAX，使其小于小龙虾的 exec_timeout。
+
+调高环境限制：在小龙虾的 Skill 配置界面，将 exec_timeout 设置为更大的值（如 1800 秒）。
+
+手动解锁：若因强杀导致脚本无法再次运行，请执行 SQL：
+UPDATE crawler_status SET is_running = 0 WHERE id = 1;
+
 > **注意**：请遵守港交所相关数据使用政策，建议在凌晨非高峰时段设置 Cron Job 定时运行增量同步。
