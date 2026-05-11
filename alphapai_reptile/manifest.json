@@ -1,0 +1,19 @@
+{
+  "name": "alphapai_reptile",
+  "version": "1.1.0",
+  "description": "金融数据采集技能：支持全自动列表抓取、详情解析（含AI摘要合并）及附件本地化。",
+  "author": "OpenClaw-User",
+  "entry_points": {
+    "list_sync": "list_crawler.py",
+    "detail_sync": "detail_crawler.py"
+  },
+  "dependencies": [
+    "requests",
+    "pymysql",
+    "beautifulsoup4",
+    "lxml",
+    "python-dotenv"
+  ],
+  "os_requirements": [],
+  "python_version": ">=3.8"
+}
