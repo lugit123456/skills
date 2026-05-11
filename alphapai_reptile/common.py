@@ -10,7 +10,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-
 class BaseCrawler:
     def __init__(self, log_dir):
         self.db_config = {
@@ -59,7 +58,6 @@ class BaseCrawler:
 
     def safe_request(self, method, url, **kwargs):
         try:
-            time.sleep(random.uniform(1.0, 2.0))
             resp = self.session.request(method, url, timeout=15, **kwargs)
             if resp.status_code == 401: return "RELOGIN"
             resp.raise_for_status()
@@ -73,9 +71,18 @@ class BaseCrawler:
         qs = os.getenv('QUIET_START', '00:01')
         qe = os.getenv('QUIET_END', '08:00')
         if qs <= now <= qe:
-            self.logger.info(f"处于静默期 ({qs}-{qe})，跳过任务")
+            self.logger.info(f"[*] 当前处于静默避风港期 ({qs} - {qe})，强制跳过任务")
             return True
         return False
+
+    def apply_start_delay(self, min_env, max_env):
+        """执行启动前的随机休眠"""
+        delay_min = int(os.getenv(min_env, 0))
+        delay_max = int(os.getenv(max_env, 0))
+        if delay_max > 0:
+            sleep_time = random.uniform(delay_min, delay_max)
+            self.logger.info(f"[*] 任务启动前随机休眠: {sleep_time:.2f} 秒...")
+            time.sleep(sleep_time)
 
     def get_token(self):
         conn = self.get_db_conn()
@@ -86,21 +93,20 @@ class BaseCrawler:
                 if res and res['expire_time'] > datetime.now():
                     return res['token']
 
-                self.logger.info("Token失效，尝试重新登录...")
+                self.logger.warning("[!] Token 已失效或不存在，小龙虾尝试调用模拟登录接口...")
                 login_url = "https://alphapai-web.rabyte.cn/external/alpha/api/v2/authentication/accountLogin"
                 payload = {"mobile": os.getenv('LOGIN_MOBILE'), "password": os.getenv('LOGIN_PASS')}
                 r = self.safe_request("POST", login_url, json=payload, headers=self.get_headers())
 
                 if r and r.get('code') == 200000:
                     token = r['data']['token']
-                    # 修复此处：只有 2 个 %s，对应后面 2 个变量
                     sql = "REPLACE INTO auth_credentials (account, token, expire_time) VALUES (%s, %s, DATE_ADD(NOW(), INTERVAL 24 HOUR))"
                     cursor.execute(sql, (os.getenv('LOGIN_MOBILE'), token))
                     conn.commit()
-                    self.logger.info("登录成功，Token已更新")
+                    self.logger.info("[√] 登录成功，Token 已自动刷新并入库。")
                     return token
                 else:
-                    self.logger.error(f"登录失败: {r}")
+                    self.logger.error(f"[X] 自动登录失败，请检查密码或网络。返回值: {r}")
         finally:
             conn.close()
         return None
