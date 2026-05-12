@@ -27,7 +27,9 @@ def _cleanup_old_logs(retention_days=7):
                 file_path = os.path.join(LOG_DIR, filename)
                 if os.path.getmtime(file_path) < now - (retention_days * 86400):
                     os.remove(file_path)
-    except: pass
+    except:
+        pass
+
 
 # 启动时执行清理
 _cleanup_old_logs(retention_days=7)
@@ -46,6 +48,7 @@ if not logger.handlers:
     ch.setFormatter(formatter)
     logger.addHandler(fh)
     logger.addHandler(ch)
+
 
 class XueqiuSmartSkill:
     def __init__(self):
@@ -169,19 +172,67 @@ class XueqiuSmartSkill:
         except:
             return None
 
+    def _fetch_long_post(self, page, uid, status_id):
+        """解析 HTML 并抓取长文的完整内容"""
+        script = """
+        async (args) => {
+            const [u, sid] = args;
+            try {
+                const r = await fetch(`/${u}/${sid}`);
+                if (r.status === 200) {
+                    return await r.text();
+                }
+            } catch(e) {}
+            return null;
+        }
+        """
+        try:
+            html = page.evaluate(script, [uid, status_id])
+            if html:
+                # 提取内置在 HTML script 里的完整 JSON 数据
+                match = re.search(r'window\.SNOWMAN_STATUS\s*=\s*(\{.*?\});\s*window\.SNOWMAN_TARGET', html, re.DOTALL)
+                if match:
+                    data = json.loads(match.group(1))
+                    return data.get('text', '')
+        except Exception as e:
+            logging.error(f"❌ 抓取长文 {status_id} 详情失败: {e}")
+        return ""
+
     def _save_data(self, statuses):
         conn = self._get_db_conn()
         new_count = 0
         try:
             with conn.cursor() as cur:
                 for s in statuses:
-                    sql = """INSERT IGNORE INTO blogger_posts (id, user_id, screen_name, content, stock_codes, stock_names, comment_time) 
-                             VALUES (%s, %s, %s, %s, %s, %s, %s)"""
+                    sql = """INSERT IGNORE INTO blogger_posts 
+                             (id, user_id, screen_name, content, stock_codes, stock_names, comment_time, raw_json) 
+                             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"""
+
+                    # 清洗 HTML 标签并处理标题拼接
                     clean_content = re.sub(r'<[^>]+>', '', s.get('text', '')).strip()
+                    title = s.get('title', '')
+                    if title and title not in clean_content:
+                        clean_content = f"【{title}】\n{clean_content}"
+
+                    # 容错：如果依然没有内容，退网回使用摘要
+                    if not clean_content:
+                        clean_content = s.get('description', '')
+
                     codes = ",".join(s.get('stockCorrelation', []))
                     names = ",".join(re.findall(r'\$([^$()]+)\((?:SH|SZ|HK)?\d{5,6}\)\$', s.get('text', '')))
-                    cur.execute(sql, (s['id'], s['user']['id'], s['user']['screen_name'], clean_content, codes, names,
-                                      datetime.fromtimestamp(s['created_at'] / 1000).strftime('%Y-%m-%d %H:%M:%S')))
+                    time_str = datetime.fromtimestamp(s['created_at'] / 1000).strftime('%Y-%m-%d %H:%M:%S')
+                    raw_json_str = json.dumps(s, ensure_ascii=False)
+
+                    cur.execute(sql, (
+                        s['id'],
+                        s['user']['id'],
+                        s['user']['screen_name'],
+                        clean_content,
+                        codes,
+                        names,
+                        time_str,
+                        raw_json_str
+                    ))
                     new_count += cur.rowcount
             conn.commit()
             return new_count
@@ -195,7 +246,6 @@ class XueqiuSmartSkill:
         env_path = os.path.join(os.path.dirname(__file__), ".env")
 
         if not os.path.exists(env_path):
-            # 报错时顺便打印出它尝试查找的路径，方便你一眼看穿 CWD 问题
             return f"⚠️ 缺少配置文件：请确保在 {env_path} 路径下存在 .env 文件。"
 
         load_dotenv(env_path)
@@ -257,7 +307,7 @@ class XueqiuSmartSkill:
                             self._send_feishu_alert("采集拦截", f"博主 {name} 连续3次请求失败，可能需要手动滑块验证。",
                                                     shot_name)
                             break
-                        time.sleep(20);
+                        time.sleep(20)
                         continue
 
                     consecutive_fail_count = 0
@@ -267,6 +317,26 @@ class XueqiuSmartSkill:
                         if not is_incremental: self._mark_task_status(uid, 2, 0)
                         break
 
+                    # --- 新增：长文补偿机制 ---
+                    for s in statuses:
+                        # type 为 3，或者内容为空但包含标题的，均按长文处理
+                        if str(s.get("type")) == "3" or (s.get("title") and not s.get("text")):
+                            logging.info(f"🔎 发现长文《{s.get('title')}》，正在向下抓取详情...")
+                            long_text = self._fetch_long_post(page, uid, s['id'])
+
+                            if long_text:
+                                # 1. 将段落和换行标签替换为 \n，保留基本的段落结构
+                                long_text = re.sub(r'</?(p|br|div)[^>]*>', '\n', long_text, flags=re.IGNORECASE)
+                                # 2. 清除所有剩余的 HTML 标签 (如 <img>, <strong>, <a> 等)
+                                clean_text = re.sub(r'<[^>]+>', '', long_text)
+                                # 3. 压缩连续的空行，并去除首尾空白
+                                s['text'] = re.sub(r'\n{2,}', '\n', clean_text).strip()
+                            else:
+                                s['text'] = s.get('description', '')
+
+                            # 获取长文后稍微休眠，降低详情接口的请求频率防止被拉黑
+                            time.sleep(random.uniform(1.0, 2.5))
+                    # -------------------------
                     new_count = self._save_data(statuses)
 
                     # 增量模式哨兵：发现没有新动态时直接切走
