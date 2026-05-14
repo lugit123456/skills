@@ -1,0 +1,54 @@
+{
+  "name": "ciq_financial_search",
+  "display_name": "Capital IQ Financial Reports Download",
+  "description": "Search for financial reports, earnings calls, and M&A documents on S&P Capital IQ and download the top results as PDF/Excel files. Handles Okta SSO authentication automatically.",
+  "version": "1.0.0",
+  "entry_point": "search_and_download.py",
+  "parameters": {
+    "company": {
+      "type": "string",
+      "required": true,
+      "description": "The company name or keyword to search on Capital IQ (e.g., 'Nvidia', 'Apple')"
+    },
+    "count": {
+      "type": "integer",
+      "required": false,
+      "default": 10,
+      "description": "Number of results to download (default: 10)"
+    }
+  },
+  "usage_examples": [
+    "在 CIQ 上搜索英伟达的财报，下载前 5 份",
+    "Search for Apple on Capital IQ and download top 10 results",
+    "帮我在 Capital IQ 下载 Microsoft 最新研报"
+  ],
+  "invocation": "python search_and_download.py \"{company}\" -n {count}",
+  "environment_variables": {
+    "CIQ_USERNAME": {
+      "required": true,
+      "description": "Capital IQ / Okta login email"
+    },
+    "CIQ_PASSWORD": {
+      "required": true,
+      "description": "Capital IQ / Okta password"
+    },
+    "CIQ_OUTPUT_DIR": {
+      "required": false,
+      "description": "Custom output directory (default: ./output)"
+    },
+    "CIQ_DEBUG": {
+      "required": false,
+      "description": "Set to 'true' to enable visible browser during login for MFA debugging (default: false)"
+    }
+  },
+  "runtime_requirements": {
+    "python": ">=3.9",
+    "browser": "Playwright Chromium (installed via script)",
+    "venv": ".venv in project directory"
+  },
+  "output": {
+    "type": "files",
+    "location": "{OUTPUT_DIR}/{company}/",
+    "format": "PDF / Excel documents"
+  }
+}
