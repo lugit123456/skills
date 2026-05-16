@@ -16,8 +16,8 @@ load_dotenv(os.path.join(PROJECT_DIR, ".env"))
 
 # ================= 环境变量与配置 =================
 OUTPUT_DIR = os.getenv("CIQ_OUTPUT_DIR", os.path.join(PROJECT_DIR, "output"))
-CIQ_USERNAME = os.getenv("CIQ_USERNAME", 'research@brightvalleycap.com')
-CIQ_PASSWORD = os.getenv("CIQ_PASSWORD", '2026Valley$')
+CIQ_USERNAME = os.getenv("CIQ_USERNAME")
+CIQ_PASSWORD = os.getenv("CIQ_PASSWORD")
 
 COOKIE_FILE = os.path.join(PROJECT_DIR, "ciq_cookies.json")
 
