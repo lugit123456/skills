@@ -287,7 +287,7 @@ def task_fetch_financial_json(session, company_name, active_headers, base_output
 def main():
     parser = argparse.ArgumentParser(description="Capital IQ 投研自动化套件")
     parser.add_argument("company", help="目标公司关键词 (例如: 'Nvidia')")
-    parser.add_argument("-f", "--format", choices=["excel", "pdf", "word"], default="excel", help="下载文件的格式")
+    parser.add_argument("-f", "--format", choices=["excel", "pdf", "word"], default="pdf", help="下载文件的格式")
     parser.add_argument("--headed", action="store_true", help="显示浏览器界面运行")
     args = parser.parse_args()
 
