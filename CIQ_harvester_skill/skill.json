@@ -1,0 +1,51 @@
+{
+  "name": "ciq_financial_data_extractor",
+  "display_name": "Capital IQ 财务与预测数据全自动下载",
+  "description": "通过自动接管浏览器，在 S&P Capital IQ 上搜索指定公司，并自动下载其所有『财务数据』（如利润表、资产负债表等）和『预测数据-业绩指引』。支持将报表保存为 Excel、PDF 或 Word 格式。",
+  "version": "2.0.0",
+  "entry_point": "search_and_download.py",
+  "parameters": {
+    "company": {
+      "type": "string",
+      "required": true,
+      "description": "目标公司的名称或股票代码，例如 'Nvidia', 'Apple', 'Tesla'。"
+    },
+    "format": {
+      "type": "string",
+      "required": false,
+      "default": "excel",
+      "enum": ["excel", "pdf", "word"],
+      "description": "用户希望下载的文件格式。如果用户在对话中提到了 PDF 或 Word，请提取对应的值；否则默认使用 excel。"
+    }
+  },
+  "usage_examples": [
+    "帮我下载 Nvidia 最新的财务报表",
+    "去 CIQ 帮我把 Apple 的财务数据和业绩指引下下来，存成 PDF 格式",
+    "搜索 Tesla，导出它的利润表和资产负债表为 Word"
+  ],
+  "invocation": "python search_and_download.py \"{company}\" -f {format}",
+  "environment_variables": {
+    "CIQ_USERNAME": {
+      "required": true,
+      "description": "Capital IQ 登录邮箱"
+    },
+    "CIQ_PASSWORD": {
+      "required": true,
+      "description": "Capital IQ 登录密码"
+    },
+    "CIQ_OUTPUT_DIR": {
+      "required": false,
+      "description": "自定义下载目录（默认: ./output）"
+    }
+  },
+  "runtime_requirements": {
+    "python": ">=3.9",
+    "browser": "Playwright Chromium (通过 setup_env.sh 安装)",
+    "venv": "项目目录下的 .venv"
+  },
+  "output": {
+    "type": "files",
+    "location": "{OUTPUT_DIR}/{company}/{format}/",
+    "format": "自动化导出的 Excel/PDF/Word 报表"
+  }
+}
